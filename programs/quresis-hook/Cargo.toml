@@ -1,0 +1,38 @@
+[package]
+name = "quresis-hook"
+version = "0.1.0"
+description = "SPL-2022 Transfer Hook for Post-Quantum Signature Enforcement"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/Quresis-Protocol/quresis-core"
+readme = "../../README.md"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "quresis_hook"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build"]
+
+[dependencies]
+anchor-lang = "0.32.1"
+# Note: anchor-spl temporarily excluded due to edition2024 dependency issue
+# Will be re-added when Solana platform-tools updates to support it
+
+# Reference to quresis core for CPI calls  
+quresis = { path = "../quresis", features = ["cpi"] }
+
+[dev-dependencies]
+anchor-client = "0.32.1"
+
+# Suppress warnings from Anchor macros that use cfg conditions
+# not declared in this crate's features
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = [
+    'cfg(feature, values("anchor-debug", "custom-heap", "custom-panic"))'
+] }

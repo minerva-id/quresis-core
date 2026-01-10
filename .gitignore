@@ -1,0 +1,108 @@
+# =====================================================
+# QURESIS PROTOCOL - GITIGNORE
+# Clean repository for Solana Grants submission
+# =====================================================
+
+# =========================
+# Dependencies
+# =========================
+node_modules/
+**/node_modules/
+
+# =========================
+# Anchor / Rust Build
+# =========================
+target/
+.anchor/
+Cargo.lock
+
+# =========================
+# Test Artifacts
+# =========================
+.test-ledger/
+test-ledger/
+
+# =========================
+# Logs
+# =========================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# =========================
+# IDE / Editor
+# =========================
+.idea/
+.vscode/
+*.sublime-*
+.project
+.settings/
+
+# =========================
+# Environment Variables
+# =========================
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+
+# =========================
+# Keypairs (SECURITY!)
+# =========================
+# NEVER commit real keypairs!
+*.json
+!package.json
+!tsconfig.json
+!package-lock.json
+
+# =========================
+# Demo Website (optional)
+# =========================
+demo-website/node_modules/
+demo-website/package-lock.json
+
+# =========================
+# Generated/Temporary
+# =========================
+*.tmp
+*.temp
+*.bak
+*.cache
+.cache/
+
+# =========================
+# Coverage / Testing
+# =========================
+coverage/
+.nyc_output/
+*.lcov
+
+# =========================
+# Lock files (optional)
+# =========================
+yarn.lock
+
+# =========================
+# Other
+# =========================
+dist/
+build/
+*.gz
+*.zip
+VIDEO_GUIDE.md
+MANIFESTO.md
+ARCHITECTURE.md
+demo-website/
+assets/
+scripts/
