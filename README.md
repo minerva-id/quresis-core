@@ -2,6 +2,7 @@
 
 **The Post-Quantum Security Standard for Real World Assets (RWA) on Solana.**
 
+[![Watch the Demo](https://img.shields.io/badge/📺%20Watch-The%20Demo-red?style=for-the-badge&logo=youtube)](https://youtu.be/5SOVC5c9xUg)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Solana-green)](https://solana.com)
 [![Architecture](https://img.shields.io/badge/architecture-Solana%20Native%20PQC%20Ready-purple)](https://github.com/solana-labs)
