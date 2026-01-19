@@ -82,14 +82,36 @@ pub mod quresis_hook {
             return Ok(());
         }
 
-        // Check if identity is frozen (offset 65)
+        // ============================================================================
+        // SAFETY CHECK: Verify Discriminator
+        // ============================================================================
+        // The discriminator is the first 8 bytes of Sha256("account:QuantumIdentity")
+        // This ensures we're reading a valid QuantumIdentity account and not garbage data
+        // Discriminator: [22, 56, 98, 16, 99, 95, 244, 76] (0x1638621063_5ff44c)
+        const QUANTUM_IDENTITY_DISCRIMINATOR: [u8; 8] = [22, 56, 98, 16, 99, 95, 244, 76];
+        
+        let account_discriminator: [u8; 8] = identity_data[0..8]
+            .try_into()
+            .map_err(|_| QuresisHookError::InvalidIdentityData)?;
+        
+        if account_discriminator != QUANTUM_IDENTITY_DISCRIMINATOR {
+            msg!("   ⚠️ Warning: Account discriminator mismatch - not a valid QuantumIdentity");
+            msg!("   Expected: {:?}", QUANTUM_IDENTITY_DISCRIMINATOR);
+            msg!("   Got: {:?}", account_discriminator);
+            // Allow transfer but log the warning - account may have been closed or corrupted
+            return Ok(());
+        }
+        
+        msg!("   ✓ QuantumIdentity discriminator verified");
+
+        // Check if identity is frozen (offset: 8 + 32 + 1 + 8 + 8 + 8 = 65)
         let is_frozen = identity_data[65] == 1;
         if is_frozen {
             msg!("❌ REJECTED: Quantum Identity is FROZEN");
             return Err(QuresisHookError::IdentityFrozen.into());
         }
 
-        // Read threshold amount (little-endian u64 at offset 66)
+        // Read threshold amount (little-endian u64 at offset: 65 + 1 = 66)
         let threshold_bytes: [u8; 8] = identity_data[66..74].try_into().unwrap();
         let threshold = u64::from_le_bytes(threshold_bytes);
 

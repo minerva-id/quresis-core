@@ -1,0 +1,62 @@
+{
+    "name": "@quresis/sdk",
+    "version": "0.1.0",
+    "description": "TypeScript SDK for Quresis Protocol - Post-Quantum Security for Solana RWAs",
+    "main": "dist/index.js",
+    "module": "dist/index.mjs",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+        }
+    },
+    "scripts": {
+        "build": "tsup src/index.ts --format cjs,esm --dts",
+        "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+        "test": "vitest",
+        "typecheck": "tsc --noEmit",
+        "lint": "eslint src/",
+        "clean": "rm -rf dist"
+    },
+    "keywords": [
+        "solana",
+        "post-quantum",
+        "cryptography",
+        "ml-dsa",
+        "pqc",
+        "rwa",
+        "blockchain",
+        "web3"
+    ],
+    "author": "Quresis Protocol",
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Quresis-Protocol/quresis-core.git",
+        "directory": "sdk"
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "dependencies": {
+        "@coral-xyz/anchor": "^0.32.0",
+        "@noble/post-quantum": "^0.2.0",
+        "@solana/web3.js": "^1.98.0",
+        "bs58": "^6.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "^22.0.0",
+        "tsup": "^8.0.0",
+        "typescript": "^5.0.0",
+        "vitest": "^2.0.0"
+    },
+    "peerDependencies": {
+        "@solana/web3.js": ">=1.90.0"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}

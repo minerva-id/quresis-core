@@ -8,6 +8,7 @@
 [![Architecture](https://img.shields.io/badge/architecture-Solana%20Native%20PQC%20Ready-purple)](https://github.com/solana-labs)
 [![Devnet](https://img.shields.io/badge/devnet-deployed-brightgreen)](https://explorer.solana.com/address/7SwY7dD2rQTvWs8KUB1xsy3GuUbKBoJdcPvx8kGiuojv?cluster=devnet)
 [![Anchor](https://img.shields.io/badge/anchor-0.32.1-blueviolet)](https://www.anchor-lang.com/)
+[![Tests](https://img.shields.io/badge/tests-19%20passing-success)](./tests)
 
 > **Program IDs (Devnet):**
 > - `quresis`: `7SwY7dD2rQTvWs8KUB1xsy3GuUbKBoJdcPvx8kGiuojv`
@@ -49,52 +50,108 @@ Quresis acts as the orchestration layer between the Solana Runtime and User Prog
 graph TD
     User["User / Institution"] -->|1. Initiates Transfer| Token["RWA Token (SPL-2022)"]
     Token -->|2. Trigger Hook| Guard["Quresis Quantum Guard"]
-    Guard -->|3. Verify Signature| P11["Project Eleven (Native Syscall)"]
-    P11 -->|4. Valid/Invalid| Guard
+    Guard -->|3. Verify Signature| Syscall["Solana Native PQC Syscall"]
+    Syscall -->|4. Valid/Invalid| Guard
     Guard -->|5. Approve/Deny| Token
 ```
 
 ### Repository Structure
- * quresis-core: Rust interfaces for interacting with Solana's native PQC syscalls.
- * quresis-hook: Reference implementation of an SPL-2022 Transfer Hook enforcing quantum checks.
- * quresis-anchor: A set of Rust macros and traits for easy integration into Anchor programs.
-## 💻 Developer Preview
-(Concept Code: How developers will use Quresis)
-
-```rust
-use quresis_anchor::prelude::*;
-
-#[program]
-pub mod my_rwa_vault {
-    use super::*;
-
-    // Automatically enforce ML-DSA signature check
-    #[access_control(Quresis::verify_quantum_sig(&ctx))] 
-    pub fn withdraw_assets(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
-        // Business logic...
-        Ok(())
-    }
-}
+```
+quresis-core/
+├── programs/
+│   ├── quresis/          # Core Quantum Identity registry
+│   └── quresis-hook/     # SPL-2022 Transfer Hook
+├── sdk/                  # TypeScript SDK (@quresis/sdk)
+│   ├── src/              # Source code
+│   ├── dist/             # Built output
+│   └── README.md         # SDK documentation
+└── tests/                # Anchor test suite (19 tests)
 ```
 
+### Key Features
+- **Quantum Identity PDA**: Links Solana wallet with ML-DSA public key
+- **Discriminator Safety Check**: Validates account type before parsing
+- **Threshold-Based Enforcement**: Configure per-identity transfer thresholds
+- **Three Enforcement Modes**: Disabled, SoftEnforce, HardEnforce
+
+---
+
+## 📦 TypeScript SDK
+
+Install the SDK for off-chain ML-DSA key generation:
+
+```bash
+npm install @quresis/sdk
+```
+
+```typescript
+import { QuresisKeyPair, QuresisSigner } from '@quresis/sdk';
+
+// Generate ML-DSA-44 keypair (NIST Level 2)
+const keypair = QuresisKeyPair.generate('ML-DSA-44');
+console.log(`Public key: ${keypair.publicKey.length} bytes`); // 1312
+
+// Sign a message
+const signer = new QuresisSigner(keypair);
+const message = new TextEncoder().encode('Transfer 1000 tokens');
+const signature = await signer.sign(message);
+console.log(`Signature: ${signature.bytes.length} bytes`); // 2420
+```
+
+See [SDK README](./sdk/README.md) for full documentation.
+
+---
+
 ## 🗺️ Roadmap
-### Phase 1: The Foundation (Current)
- * [x] Analysis of Solana's native ML-DSA implementation and upcoming syscalls.
- * [x] Development of `quresis` core program for Anchor.
- * [ ] Benchmarking CU costs for hybrid verification.
-### Phase 2: The Guard (Grant Milestone)
- * [ ] Deployment of the `quresis-hook` Transfer Hook program on Devnet.
- * [ ] "Quantum RWA" Demo: A tokenized asset that requires dual-signing for transfers.
+
+### Phase 1: The Foundation ✅
+- [x] Analysis of Solana's native ML-DSA implementation and upcoming syscalls
+- [x] Development of `quresis` core program for Anchor
+- [x] Deployment of `quresis-hook` Transfer Hook program on Devnet
+- [x] TypeScript SDK for off-chain ML-DSA key generation
+- [x] Discriminator safety checks for cross-program data validation
+- [x] Comprehensive test suite (19 tests passing)
+
+### Phase 2: The Guard (In Progress)
+- [ ] "Quantum RWA" Demo: A tokenized asset that requires dual-signing for transfers
+- [ ] Benchmarking CU costs for hybrid verification
+- [ ] Frontend demo application
+
 ### Phase 3: Standardization
- * [ ] Release of TypeScript SDK for off-chain ML-DSA key generation.
- * [ ] Proposal for a standard "Quantum Identity" PDA layout for Solana users.
+- [ ] Proposal for a standard "Quantum Identity" PDA layout for Solana users
+- [ ] Security audit and mainnet deployment
+- [ ] Integration guides for major RWA platforms
+
+---
+
+## 🚀 Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/Quresis-Protocol/quresis-core.git
+cd quresis-core
+
+# Install dependencies
+yarn install
+
+# Build the programs
+anchor build
+
+# Run tests (localnet)
+anchor test
+```
+
+---
 
 ## 🤝 Contributing
+
 Quresis is an open-source standard. We welcome contributions from Rust developers, cryptographers, and institutional partners interested in piloting quantum-safe assets.
 
 ## 📄 License
-This project is licensed under the Apache 2.0 License
-.
+
+This project is licensed under the Apache 2.0 License.
+
 <p align="center">
 Built with 🦀 and ⚛️ for the Solana Ecosystem.
 </p>
+
