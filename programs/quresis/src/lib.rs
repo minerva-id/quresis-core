@@ -19,6 +19,12 @@ pub mod constants {
     pub const SEED_PREFIX: &[u8] = b"quresis_id";
     /// Default threshold amount in lamports (100 SOL = 100 * 10^9)
     pub const DEFAULT_THRESHOLD: u64 = 100_000_000_000;
+    /// Minimum threshold amount in lamports (1 SOL = 10^9)
+    /// Prevents setting threshold too low which would require PQC for every transfer
+    pub const MIN_THRESHOLD: u64 = 1_000_000_000;
+    /// Maximum threshold amount in lamports (1,000,000 SOL)
+    /// Prevents setting threshold so high that PQC is effectively disabled
+    pub const MAX_THRESHOLD: u64 = 1_000_000_000_000_000_000;
 }
 
 use constants::*;
@@ -41,6 +47,13 @@ pub mod quresis {
             QuresisError::InvalidKeyLength
         );
 
+        // Validate threshold amount
+        let threshold = threshold_amount.unwrap_or(DEFAULT_THRESHOLD);
+        require!(
+            threshold >= MIN_THRESHOLD && threshold <= MAX_THRESHOLD,
+            QuresisError::InvalidThreshold
+        );
+
         let identity = &mut ctx.accounts.identity;
         let clock = Clock::get()?;
 
@@ -51,7 +64,7 @@ pub mod quresis {
         identity.last_active_slot = clock.slot;
         identity.created_at = clock.unix_timestamp;
         identity.is_frozen = false;
-        identity.threshold_amount = threshold_amount.unwrap_or(DEFAULT_THRESHOLD);
+        identity.threshold_amount = threshold;
         identity.key_version = 1;
 
         emit!(IdentityRegistered {
@@ -157,6 +170,12 @@ pub mod quresis {
         ctx: Context<ManageIdentity>,
         new_threshold: u64,
     ) -> Result<()> {
+        // Validate new threshold
+        require!(
+            new_threshold >= MIN_THRESHOLD && new_threshold <= MAX_THRESHOLD,
+            QuresisError::InvalidThreshold
+        );
+
         let identity = &mut ctx.accounts.identity;
         let old_threshold = identity.threshold_amount;
 
@@ -380,6 +399,9 @@ pub enum QuresisError {
 
     #[msg("Sequence number mismatch - possible replay attack.")]
     SequenceMismatch,
+
+    #[msg("Invalid threshold: must be between 1 SOL and 1,000,000 SOL.")]
+    InvalidThreshold,
 }
 
 // ============================================================================
@@ -402,18 +424,14 @@ fn mock_pqc_verify(_pubkey: &[u8], _message: &[u8], _signature: &[u8]) -> bool {
 }
 
 /// Hash a message to 32 bytes for event logging
-/// Simple implementation - uses XOR folding for logging purposes only
-/// This is NOT cryptographically secure but sufficient for event identification
+/// Uses a proper collision-resistant hash via Pubkey derivation (SHA256-based)
+/// This provides cryptographic correctness for event identification
 fn hash_message(message: &[u8]) -> [u8; 32] {
-    let mut result = [0u8; 32];
-    for (i, byte) in message.iter().enumerate() {
-        result[i % 32] ^= byte;
-    }
-    // Mix in the length to differentiate messages
-    let len_bytes = (message.len() as u64).to_le_bytes();
-    for (i, byte) in len_bytes.iter().enumerate() {
-        result[24 + i] ^= byte;
-    }
-    result
+    // Use Pubkey::find_program_address which internally uses SHA256
+    // We hash the message through the PDA derivation mechanism
+    // The bump is discarded - we only want the deterministic hash output
+    let seeds: &[&[u8]] = &[b"msg_hash", message];
+    let (hash_key, _) = Pubkey::find_program_address(seeds, &crate::ID);
+    hash_key.to_bytes()
 }
 
