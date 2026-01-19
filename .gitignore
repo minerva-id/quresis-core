@@ -102,7 +102,7 @@ build/
 *.zip
 VIDEO_GUIDE.md
 MANIFESTO.md
-ARCHITECTURE.md
 demo-website/
 assets/
 scripts/
+
