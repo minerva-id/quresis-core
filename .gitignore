@@ -100,9 +100,6 @@ dist/
 build/
 *.gz
 *.zip
-VIDEO_GUIDE.md
-MANIFESTO.md
-demo-website/
 assets/
 scripts/
 

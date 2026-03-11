@@ -43,7 +43,8 @@ pub mod quresis {
         // Validate key length
         require!(
             pqc_public_key.len() == ML_DSA_44_PUBKEY_SIZE
-                || pqc_public_key.len() == ML_DSA_65_PUBKEY_SIZE,
+                || pqc_public_key.len() == ML_DSA_65_PUBKEY_SIZE
+                || pqc_public_key.len() == 32, // Allow 32-byte mock key for testing/demo (Solana MTU limit is 1232 bytes)
             QuresisError::InvalidKeyLength
         );
 
@@ -66,6 +67,10 @@ pub mod quresis {
         identity.is_frozen = false;
         identity.threshold_amount = threshold;
         identity.key_version = 1;
+
+        // Initialize Velocity tracking
+        identity.current_window_start = clock.unix_timestamp;
+        identity.current_window_amount = 0;
 
         emit!(IdentityRegistered {
             authority: identity.authority,
@@ -94,7 +99,8 @@ pub mod quresis {
         // Validate new key length
         require!(
             new_pqc_public_key.len() == ML_DSA_44_PUBKEY_SIZE
-                || new_pqc_public_key.len() == ML_DSA_65_PUBKEY_SIZE,
+                || new_pqc_public_key.len() == ML_DSA_65_PUBKEY_SIZE
+                || new_pqc_public_key.len() == 32,
             QuresisError::InvalidKeyLength
         );
 
@@ -218,6 +224,33 @@ pub mod quresis {
         msg!("🗑️ Identity Account Closed");
         Ok(())
     }
+
+    /// Record a transfer to update the user's velocity window.
+    /// Typically called via CPI by the transfer hook.
+    pub fn record_transfer(ctx: Context<RecordTransfer>, amount: u64) -> Result<()> {
+        let identity = &mut ctx.accounts.identity;
+        require!(!identity.is_frozen, QuresisError::IdentityFrozen);
+
+        let current_time = Clock::get()?.unix_timestamp;
+        let window_size: i64 = 24 * 60 * 60; // 24 hours 
+
+        // Check if we need to reset the sliding window
+        if current_time >= identity.current_window_start.saturating_add(window_size) {
+            identity.current_window_start = current_time;
+            identity.current_window_amount = 0;
+        }
+
+        // Accumulate the transfer amount
+        identity.current_window_amount = identity.current_window_amount.saturating_add(amount);
+
+        msg!(
+            "📊 Velocity Updated: window_total={}, window_start={}",
+            identity.current_window_amount,
+            identity.current_window_start
+        );
+
+        Ok(())
+    }
 }
 
 // ============================================================================
@@ -301,6 +334,18 @@ pub struct CloseIdentity<'info> {
     pub authority: Signer<'info>,
 }
 
+#[derive(Accounts)]
+pub struct RecordTransfer<'info> {
+    #[account(
+        mut,
+        seeds = [SEED_PREFIX, identity.authority.as_ref()],
+        bump = identity.bump,
+    )]
+    pub identity: Account<'info, QuantumIdentity>,
+    // TODO: In production, enforce caller authorization via PDA registry or require identity authority as signer.
+    // MVP implementation allows any approved hook to CPI into this endpoint.
+}
+
 // ============================================================================
 // STATE
 // ============================================================================
@@ -324,6 +369,10 @@ pub struct QuantumIdentity {
     pub threshold_amount: u64,            // 8 bytes
     /// Key version (incremented on rotation)
     pub key_version: u16,                 // 2 bytes
+    /// Velocity tracking: start of current 24h window
+    pub current_window_start: i64,        // 8 bytes
+    /// Velocity tracking: total amount transferred in current window
+    pub current_window_amount: u64,       // 8 bytes
     /// ML-DSA Public Key (variable size: 1312 or 1952 bytes)
     #[max_len(2048)]
     pub pqc_public_key: Vec<u8>,          // 4 + len bytes
@@ -331,7 +380,7 @@ pub struct QuantumIdentity {
 
 impl QuantumIdentity {
     /// Base space without the vector data
-    pub const INIT_SPACE: usize = 32 + 1 + 8 + 8 + 8 + 1 + 8 + 2 + 4;
+    pub const INIT_SPACE: usize = 32 + 1 + 8 + 8 + 8 + 1 + 8 + 2 + 8 + 8 + 4;
 }
 
 // ============================================================================

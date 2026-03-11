@@ -11,8 +11,8 @@ quresis = "7SwY7dD2rQTvWs8KUB1xsy3GuUbKBoJdcPvx8kGiuojv"
 quresis_hook = "9P6cDkGwt3AADtVtFLy3nCHz3ZDLnMLpscUmVFqosvB4"
 
 [programs.localnet]
-quresis = "4RcF26R7sj9tbvPPA2m4oVbueAYSbX8XUBKMhybEVxis"
-quresis_hook = "HookQR5iS1E8j7q5xGvB6Ux7tfPQCzrS5C3nH8K4z2M7"
+quresis = "7SwY7dD2rQTvWs8KUB1xsy3GuUbKBoJdcPvx8kGiuojv"
+quresis_hook = "9P6cDkGwt3AADtVtFLy3nCHz3ZDLnMLpscUmVFqosvB4"
 
 [registry]
 url = "https://api.apr.dev"
